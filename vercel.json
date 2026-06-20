@@ -2,7 +2,7 @@
   "version": 2,
   "name": "refferq",
   "framework": "nextjs",
-  "buildCommand": "npx prisma generate && npm run build",
+  "buildCommand": "prisma generate && prisma db push && tsx scripts/seed.ts && next build",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "regions": ["iad1"],
