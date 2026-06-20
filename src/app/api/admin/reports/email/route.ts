@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { resend } from '@/lib/email';
+import { sendZeptomail } from '@/lib/zeptomail';
 
 async function verifyAdmin(request: NextRequest) {
   try {
@@ -89,11 +89,9 @@ export async function POST(request: NextRequest) {
     `;
 
     // Send to all recipients
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Refferq <noreply@refferq.com>';
     const results = await Promise.allSettled(
       recipients.map((email: string) =>
-        resend.emails.send({
-          from: fromEmail,
+        sendZeptomail({
           to: email.trim(),
           subject: `[Refferq] ${reportData.type || 'Report'} — ${reportDate}`,
           html,

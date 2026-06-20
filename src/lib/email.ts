@@ -1,24 +1,4 @@
-import { Resend } from 'resend';
-
-// Initialize Resend with API key only when needed (server-side)
-let resendInstance: Resend | null = null;
-
-function getResendClient(): Resend {
-  if (!resendInstance) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('RESEND_API_KEY environment variable is not set');
-    }
-    resendInstance = new Resend(apiKey);
-  }
-  return resendInstance;
-}
-
-export const resend = {
-  get emails() {
-    return getResendClient().emails;
-  }
-};
+export { sendZeptomail } from './zeptomail';
 
 export interface EmailTemplate {
   to: string;
@@ -83,7 +63,7 @@ export interface CommissionNotificationData {
 }
 
 class EmailService {
-  private defaultFrom = process.env.RESEND_FROM_EMAIL || 'Refferq <noreply@refferq.com>';
+  private defaultFrom = process.env.ZEPTOMAIL_FROM_EMAIL || 'Refferq <noreply@refferq.com>';
 
   /** Escape HTML special characters to prevent XSS in email templates */
   private escapeHtml(str: string): string {
@@ -129,15 +109,18 @@ class EmailService {
     html: string;
   }): Promise<{ success: boolean; message: string }> {
     try {
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-
-      const result = await resend.emails.send({
+      const { sendZeptomail } = await import('./zeptomail');
+      const result = await sendZeptomail({
         from: this.defaultFrom,
         to: params.to,
         subject: params.subject,
         html: params.html,
       });
+
+      if (!result.success) {
+        console.error('Email sending error:', result.error);
+        return { success: false, message: 'Failed to send email' };
+      }
 
       return { success: true, message: 'Email sent successfully' };
     } catch (error) {
@@ -881,22 +864,7 @@ class EmailService {
   }
 
   async sendCustomEmail(to: string, subject: string, html: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const result = await resend.emails.send({
-        from: this.defaultFrom,
-        to,
-        subject,
-        html,
-      });
-
-      console.log('Custom email sent:', result);
-      return { success: true, message: 'Email sent successfully' };
-    } catch (error) {
-      console.error('Failed to send custom email:', error);
-      return { success: false, message: 'Failed to send email' };
-    }
+    return this.sendEmail({ to, subject, html });
   }
 
   // ─── Generic Email (for system notifications) ────────────────
