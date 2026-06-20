@@ -27,7 +27,7 @@ export async function sendZeptomail(params: {
   try {
     await client.sendMail({
       from,
-      to: [{ email_address: { address: params.to } }],
+      to: [{ email_address: { address: params.to, name: params.to } }],
       subject: params.subject,
       htmlbody: params.html,
     });
